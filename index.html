@@ -31,7 +31,7 @@
   </div>
 
   <script>
-    // 49유닛 구성
+    // ✅ 49유닛 생성
     const sensorUnits = [];
     for (let i = 1; i <= 49; i++) {
       sensorUnits.push({
@@ -41,7 +41,7 @@
       });
     }
 
-    // 카드 생성
+    // ✅ HTML 카드 생성
     const container = document.getElementById('sensors-container');
     sensorUnits.forEach(unit => {
       const card = document.createElement('div');
@@ -54,10 +54,10 @@
       container.appendChild(card);
     });
 
-    // MQTT 연결 (HiveMQ Cloud WebSocket Secure)
-    const client = mqtt.connect("wss://304538f79273425b9bdeedb45327d076.s1.eu.hivemq.cloud:8884/mqtt", {
-      username: "Goodmansystemllc",   // 새 Credentials
-      password: "Good7071**"          // 새 Credentials
+    // ✅ MQTT 연결 (HiveMQ Cloud WebSocket Secure)
+    const client = mqtt.connect("wss://3f34159555984b35a539f803505dc858.s1.eu.hivemq.cloud:8884/mqtt", {
+      username: "Goodmansystemllc",
+      password: "Good7071**"
     });
 
     const lastUpdate = {};
@@ -71,21 +71,25 @@
     });
 
     client.on("message", (topic, message) => {
-      const data = JSON.parse(message.toString());
-      let role = topic.includes("evap") ? "evap" : "supply";
-      let id = topic.split("-")[1];
-      const key = `${role}-${id}`;
+      try {
+        const data = JSON.parse(message.toString());
+        let role = topic.includes("evap") ? "evap" : "supply";
+        let id = topic.split("-")[1];
+        const key = `${role}-${id}`;
 
-      const temp = data.temp_f;
-      const tempEl = document.getElementById(`temp-${key}`);
-      tempEl.textContent = temp.toFixed(1);
-      tempEl.className = (temp >= 32 && temp <= 73) ? 'data-value blue' : 'data-value red';
+        const temp = data.temp_f;
+        const tempEl = document.getElementById(`temp-${key}`);
+        tempEl.textContent = temp.toFixed(1);
+        tempEl.className = (temp >= 32 && temp <= 73) ? 'data-value blue' : 'data-value red';
 
-      document.getElementById(`status-${key}`).className = 'status online';
-      lastUpdate[key] = Date.now();
+        document.getElementById(`status-${key}`).className = 'status online';
+        lastUpdate[key] = Date.now();
+      } catch (e) {
+        console.error("JSON 파싱 오류:", e);
+      }
     });
 
-    // 30초 이상 데이터 없으면 offline 처리
+    // ✅ 오프라인 감지 (30초 이상 업데이트 없으면 offline 처리)
     setInterval(() => {
       const now = Date.now();
       sensorUnits.forEach(unit => {
