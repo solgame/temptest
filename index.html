@@ -31,7 +31,7 @@
   </div>
 
   <script>
-    // 49유닛 생성
+    // 49유닛 레이아웃 준비
     const sensorUnits = [];
     for (let i = 1; i <= 49; i++) {
       sensorUnits.push({
@@ -41,7 +41,7 @@
       });
     }
 
-    // HTML 카드 생성
+    // 카드 생성
     const container = document.getElementById('sensors-container');
     sensorUnits.forEach(unit => {
       const card = document.createElement('div');
@@ -54,14 +54,13 @@
       container.appendChild(card);
     });
 
-    // 마지막 수신 시간 기록
-    const lastUpdate = {};
-
-    // MQTT 연결
-    const client = mqtt.connect("wss://broker.emqx.io:8084/mqtt", {
+    // MQTT 연결 (HiveMQ Cloud WebSocket Secure)
+    const client = mqtt.connect("wss://304538f79273425b9bdeedb45327d076.s1.eu.hivemq.cloud:8884/mqtt", {
       username: "goodmansystemllc@mail.com",
       password: "Sol7071**"
     });
+
+    const lastUpdate = {};
 
     client.on("connect", () => {
       console.log("✅ MQTT 연결됨");
@@ -86,7 +85,7 @@
       lastUpdate[key] = Date.now();
     });
 
-    // 오프라인 감지 (30초 이상 업데이트 없으면 offline 처리)
+    // 30초 이상 데이터 없으면 offline 처리
     setInterval(() => {
       const now = Date.now();
       sensorUnits.forEach(unit => {
