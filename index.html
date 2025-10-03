@@ -5,19 +5,38 @@
   <title>에어컨 모니터링 대시보드 (49유닛)</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f2f5; }
-    .container { max-width: 1900px; margin: auto; }
-    .header { text-align: center; margin: 20px; }
-    .sensors-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
-    .sensor-card {
-      background: white; border-radius: 8px; padding: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1); font-size: 0.9rem;
+    body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; }
+    .container { max-width: 1900px; margin: auto; padding: 20px; }
+    .header {
+      text-align: center; margin-bottom: 20px; position: relative;
     }
-    .unit-title { font-weight: bold; margin-bottom: 5px; }
+    h1 { margin: 0; color: #333; font-weight: 600; }
+    .refresh-btn {
+      position: absolute; right: 10px; top: 10px;
+      padding: 4px 10px; font-size: 0.8rem; cursor: pointer;
+      border: none; border-radius: 5px;
+      background: #007bff; color: white;
+      transition: background 0.3s;
+    }
+    .refresh-btn:hover { background: #0056b3; }
+    .sensors-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px;
+    }
+    .sensor-card {
+      background: white; border-radius: 12px; padding: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      font-size: 0.95rem; transition: transform 0.2s;
+    }
+    .sensor-card:hover { transform: translateY(-3px); }
+    .unit-title { font-weight: bold; margin-bottom: 8px; color: #444; font-size: 1rem; }
     .data-value { font-size: 1.1rem; font-weight: bold; }
     .blue { color: #1e90ff; }
+    .black { color: #111; }
     .red { color: #ff4757; }
-    .status { width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-left: 5px; }
+    .status {
+      width: 10px; height: 10px; display: inline-block;
+      border-radius: 50%; margin-left: 6px;
+    }
     .online { background: #28a745; }
     .offline { background: #6c757d; }
   </style>
@@ -26,6 +45,7 @@
   <div class="container">
     <div class="header">
       <h1>❄️ 에어컨 모니터링 대시보드 (49유닛)</h1>
+      <button class="refresh-btn" onclick="location.reload()">새로고침</button>
     </div>
     <div id="sensors-container" class="sensors-grid"></div>
   </div>
@@ -54,7 +74,7 @@
       container.appendChild(card);
     });
 
-    // ✅ MQTT 연결 (HiveMQ Cloud WebSocket Secure)
+    // ✅ MQTT 연결
     const client = mqtt.connect("wss://3f34159555984b35a539f803505dc858.s1.eu.hivemq.cloud:8884/mqtt", {
       username: "Goodmansystemllc",
       password: "Good7071**"
@@ -70,6 +90,19 @@
       });
     });
 
+    function getColorClass(role, temp) {
+      if (role === "evap") {
+        if (temp < 32) return "blue";
+        else if (temp <= 65) return "black";
+        else return "red";
+      } else if (role === "supply") {
+        if (temp <= 76) return "blue";
+        else if (temp <= 80) return "black";
+        else return "red";
+      }
+      return "black";
+    }
+
     client.on("message", (topic, message) => {
       try {
         const data = JSON.parse(message.toString());
@@ -80,7 +113,7 @@
         const temp = data.temp_f;
         const tempEl = document.getElementById(`temp-${key}`);
         tempEl.textContent = temp.toFixed(1);
-        tempEl.className = (temp >= 32 && temp <= 73) ? 'data-value blue' : 'data-value red';
+        tempEl.className = `data-value ${getColorClass(role, temp)}`;
 
         document.getElementById(`status-${key}`).className = 'status online';
         lastUpdate[key] = Date.now();
@@ -89,7 +122,7 @@
       }
     });
 
-    // ✅ 오프라인 감지 (30초 이상 업데이트 없으면 offline 처리)
+    // ✅ 오프라인 감지
     setInterval(() => {
       const now = Date.now();
       sensorUnits.forEach(unit => {
