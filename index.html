@@ -1,44 +1,92 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <title>에어컨 모니터링 대시보드 (49유닛)</title>
+  
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; }
-    .container { max-width: 1900px; margin: auto; padding: 20px; }
-    .header {
-      text-align: center; margin-bottom: 20px; position: relative;
-    }
-    h1 { margin: 0; color: #333; font-weight: 600; }
+  <script src="unitLocations.js"></script> <style>
+    /* 폰트 및 배경 */
+    body { font-family: 'Poppins', sans-serif; background: #f0f2f5; margin: 0; color: #333; }
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+    /* 컨테이너 및 헤더 */
+    .container { max-width: 1900px; margin: auto; padding: 25px; }
+    .header { text-align: left; margin-bottom: 30px; position: relative; border-bottom: 2px solid #ddd; padding-bottom: 15px; }
+    h1 { margin: 0; color: #2c3e50; font-weight: 700; font-size: 1.8rem; }
     .refresh-btn {
-      position: absolute; right: 10px; top: 10px;
-      padding: 4px 10px; font-size: 0.8rem; cursor: pointer;
-      border: none; border-radius: 5px;
-      background: #007bff; color: white;
-      transition: background 0.3s;
+      position: absolute; right: 0; top: 5px;
+      padding: 6px 15px; font-size: 0.9rem; cursor: pointer;
+      border: none; border-radius: 6px;
+      background: #3498db; color: white;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: background 0.3s, transform 0.1s;
     }
-    .refresh-btn:hover { background: #0056b3; }
+    .refresh-btn:hover { background: #2980b9; transform: translateY(-1px); }
+
+    /* 그리드 */
     .sensors-grid {
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
     }
+
+    /* 유닛 카드 */
     .sensor-card {
-      background: white; border-radius: 12px; padding: 15px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      font-size: 0.95rem; transition: transform 0.2s;
+      background: white; border-radius: 12px; padding: 20px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+      font-size: 0.9rem; transition: transform 0.3s, box-shadow 0.3s;
+      border-left: 5px solid #3498db;
+      overflow: hidden;
     }
-    .sensor-card:hover { transform: translateY(-3px); }
-    .unit-title { font-weight: bold; margin-bottom: 8px; color: #444; font-size: 1rem; }
-    .data-value { font-size: 1.1rem; font-weight: bold; }
-    .blue { color: #1e90ff; }
-    .black { color: #111; }
-    .red { color: #ff4757; }
+    .sensor-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+
+    .unit-info { margin-bottom: 15px; }
+    .unit-title {
+        font-weight: 700; color: #2c3e50; font-size: 1.2rem;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 4px;
+    }
+    .unit-location { font-size: 0.85rem; color: #7f8c8d; }
+
+    /* 센서 데이터 영역 */
+    .sensor-data-area {
+        display: flex; gap: 10px;
+        flex-direction: column;
+    }
+
+    .sensor-entry {
+        padding: 8px 0;
+        border-top: 1px solid #ecf0f1;
+        display: flex; justify-content: space-between;
+        align-items: center;
+    }
+    .sensor-entry:first-child { border-top: none; }
+
+    .sensor-name { font-weight: 600; color: #555; font-size: 0.9rem; }
+    .data-display { display: flex; align-items: center; }
+
+    .data-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-right: 5px;
+    }
+
+    /* 색상 클래스 */
+    .blue { color: #3498db; }
+    .black { color: #2c3e50; }
+    .red { color: #e74c3c; }
+
+    /* 상태 표시 */
     .status {
       width: 10px; height: 10px; display: inline-block;
-      border-radius: 50%; margin-left: 6px;
+      border-radius: 50%; margin-left: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
     }
-    .online { background: #28a745; }
-    .offline { background: #6c757d; }
+    .online { background: #2ecc71; }
+    .offline { background: #95a5a6; }
   </style>
 </head>
 <body>
@@ -51,25 +99,48 @@
   </div>
 
   <script>
-    // ✅ 49유닛 생성
+    // unitLocations 객체는 이미 unitLocations.js 파일을 통해 로드되었습니다.
+    
+    // ✅ 49유닛 생성 (위치 정보 포함)
     const sensorUnits = [];
     for (let i = 1; i <= 49; i++) {
       sensorUnits.push({
         id: i,
-        evap: { topic: `ac/temperature/evap-${i}`, name: `증발기-${i}` },
-        supply: { topic: `ac/temperature/supply-${i}`, name: `공급기-${i}` }
+        // unitLocations.js에서 위치 정보를 가져오고, 없으면 '위치 미지정'으로 표시
+        location: unitLocations[i] || '위치 미지정', 
+        evap: { topic: `ac/temperature/evap-${i}`, name: `증발기` },
+        supply: { topic: `ac/temperature/supply-${i}`, name: `공급기` }
       });
     }
 
-    // ✅ HTML 카드 생성
+    // ✅ HTML 카드 생성 (세련된 디자인 및 데이터 연동 ID 포함)
     const container = document.getElementById('sensors-container');
     sensorUnits.forEach(unit => {
       const card = document.createElement('div');
       card.className = 'sensor-card';
       card.innerHTML = `
-        <div class="unit-title">유닛 ${unit.id}</div>
-        <div>${unit.evap.name}: <span id="temp-evap-${unit.id}">--</span>°F <span id="status-evap-${unit.id}" class="status offline"></span></div>
-        <div>${unit.supply.name}: <span id="temp-supply-${unit.id}">--</span>°F <span id="status-supply-${unit.id}" class="status offline"></span></div>
+        <div class="unit-info">
+            <div class="unit-title">
+                유닛 ${unit.id}
+            </div>
+            <div class="unit-location">${unit.location}</div>
+        </div>
+        <div class="sensor-data-area">
+            <div class="sensor-entry">
+                <span class="sensor-name">${unit.evap.name}</span>
+                <div class="data-display">
+                    <span id="temp-evap-${unit.id}" class="data-value">--</span>°F
+                    <span id="status-evap-${unit.id}" class="status offline"></span>
+                </div>
+            </div>
+            <div class="sensor-entry">
+                <span class="sensor-name">${unit.supply.name}</span>
+                <div class="data-display">
+                    <span id="temp-supply-${unit.id}" class="data-value">--</span>°F
+                    <span id="status-supply-${unit.id}" class="status offline"></span>
+                </div>
+            </div>
+        </div>
       `;
       container.appendChild(card);
     });
@@ -113,7 +184,7 @@
         const temp = data.temp_f;
         const tempEl = document.getElementById(`temp-${key}`);
         tempEl.textContent = temp.toFixed(1);
-        tempEl.className = `data-value ${getColorClass(role, temp)}`;
+        tempEl.className = `data-value ${getColorClass(role, temp)}`; 
 
         document.getElementById(`status-${key}`).className = 'status online';
         lastUpdate[key] = Date.now();
@@ -131,6 +202,7 @@
           if (!lastUpdate[key] || now - lastUpdate[key] > 30000) {
             document.getElementById(`status-${key}`).className = 'status offline';
             document.getElementById(`temp-${key}`).textContent = "--";
+            document.getElementById(`temp-${key}`).className = 'data-value black'; 
           }
         });
       });
