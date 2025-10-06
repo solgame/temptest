@@ -10,22 +10,37 @@
       background: #f5f6fa;
       margin: 0;
       text-align: center;
+      overflow-x: hidden;
     }
     h2 {
       margin-top: 20px;
       color: #2c3e50;
     }
+
+    /* ---------------- 지도 컨테이너 ---------------- */
+    .map-wrapper {
+      width: 90%;
+      max-width: 900px;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 0 8px #bbb;
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+      cursor: grab;
+    }
     #layout {
       position: relative;
-      width: 90%;
-      max-width: 800px;
-      margin: 20px auto;
+      transform-origin: center center;
+      transition: transform 0.1s ease-out;
     }
     #layout img {
       width: 100%;
       border-radius: 10px;
-      box-shadow: 0 0 8px #bbb;
+      display: block;
     }
+
+    /* 마커 스타일 */
     .marker {
       position: absolute;
       width: 28px;
@@ -45,22 +60,70 @@
       background: #e74c3c !important;
       box-shadow: 0 0 10px #e74c3c;
     }
-    .blink {
-      animation: blinkAnim 0.8s linear infinite;
+
+    /* 팝업 카드 */
+    .popup {
+      position: absolute;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      padding: 12px 14px 10px 14px;
+      font-size: 0.9rem;
+      color: #333;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+      transform: translate(-50%, 10px);
+      min-width: 150px;
+      z-index: 10;
+      animation: fadeIn 0.3s ease;
     }
-    @keyframes blinkAnim {
-      50% { opacity: 0.3; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, 0); }
+      to { opacity: 1; transform: translate(-50%, 10px); }
     }
 
-    /* 표 */
+    .popup h4 {
+      margin: 0;
+      color: #2c3e50;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .close-btn {
+      border: none;
+      background: none;
+      color: #555;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 10px;
+      transition: 0.2s;
+    }
+    .close-btn:hover { color: #e74c3c; transform: scale(1.2); }
+
+    .popup .temp {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      margin-top: 5px;
+    }
+
+    .blue { color: #3498db; }
+    .black { color: #2c3e50; }
+    .red { color: #e74c3c; }
+
+    /* ---------------- 표 ---------------- */
     .table-container {
       width: 90%;
-      max-width: 800px;
-      margin: 30px auto;
-      max-height: 500px;
+      max-width: 900px;
+      margin: 30px auto 60px auto;
+      max-height: 450px;
       overflow-y: auto;
-      border-radius: 10px;
       background: white;
+      border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     table {
@@ -82,29 +145,10 @@
     td { text-align: center; }
     tr:last-child td { border-bottom: none; }
 
-    /* 하이라이트 애니메이션 */
     .highlight {
-      animation: highlightFade 1.5s ease-out;
-      background-color: #fff9c4;
+      background: #fff9c4;
+      transition: background 0.5s;
     }
-    @keyframes highlightFade {
-      0% { background-color: #ffeaa7; }
-      100% { background-color: transparent; }
-    }
-
-    .blue { color: #3498db; }
-    .black { color: #2c3e50; }
-    .red { color: #e74c3c; }
-
-    .status {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-left: 6px;
-    }
-    .online { background: #2ecc71; }
-    .offline { background: #bdc3c7; }
 
     button.select-btn {
       padding: 4px 8px;
@@ -124,17 +168,19 @@
 <body>
   <h2>RTU 실시간 온도 모니터링</h2>
 
-  <!-- 🔹 배경 이미지와 마커 -->
-  <div id="layout">
-    <img src="layout.jpg" alt="Layout">
-    <div class="marker" id="unit1" style="top: 50px; left: 180px;">1</div>
-    <div class="marker" id="unit2" style="top: 50px; left: 245px;">2</div>
-    <div class="marker" id="unit3" style="top: 50px; left: 310px;">3</div>
-    <div class="marker" id="unit4" style="top: 90px; left: 180px;">4</div>
-    <div class="marker" id="unit5" style="top: 90px; left: 310px;">5</div>
+  <!-- 🔹 지도 확대/축소 가능한 영역 -->
+  <div class="map-wrapper" id="mapWrapper">
+    <div id="layout">
+      <img src="layout.jpg" alt="Layout">
+      <div class="marker" id="unit1" style="top: 50px; left: 180px;">1</div>
+      <div class="marker" id="unit2" style="top: 50px; left: 245px;">2</div>
+      <div class="marker" id="unit3" style="top: 50px; left: 310px;">3</div>
+      <div class="marker" id="unit4" style="top: 90px; left: 180px;">4</div>
+      <div class="marker" id="unit5" style="top: 90px; left: 310px;">5</div>
+    </div>
   </div>
 
-  <!-- 🔹 데이터 테이블 -->
+  <!-- 🔹 전체 유닛 테이블 -->
   <div class="table-container">
     <table>
       <thead>
@@ -157,58 +203,13 @@
 
     const unitCount = 10;
     const lastUpdate = {};
-    const tableBody = document.getElementById("unit-table");
+    const temps = {};
+    let activePopup = null;
 
-    // 테이블 행 생성
-    for (let i = 1; i <= unitCount; i++) {
-      const tr = document.createElement("tr");
-      tr.id = `row-unit${i}`;
-      tr.innerHTML = `
-        <td><button class="select-btn" onclick="selectMarker(${i})">선택</button></td>
-        <td>Unit ${i}</td>
-        <td><span id="evap-${i}" class="black">--</span><span id="evap-status-${i}" class="status offline"></span></td>
-        <td><span id="supply-${i}" class="black">--</span><span id="supply-status-${i}" class="status offline"></span></td>
-      `;
-      tableBody.appendChild(tr);
-    }
-
-    // 🔸 마커 클릭 시: 해당 행을 맨 위로 올리고 부드럽게 하이라이트
-    document.querySelectorAll('.marker').forEach(marker => {
-      marker.addEventListener('click', () => {
-        const id = marker.id.replace('unit', '');
-        const row = document.getElementById(`row-unit${id}`);
-        if (row) {
-          // 해당 행을 맨 위로 이동시키기
-          tableBody.prepend(row);
-          // 부드럽게 하이라이트 효과
-          row.classList.add('highlight');
-          setTimeout(() => row.classList.remove('highlight'), 1500);
-        }
-      });
-    });
-
-    // 🔸 표의 선택 버튼 클릭 시: 마커 깜빡임
-    window.selectMarker = function(id) {
-      document.querySelectorAll('.marker').forEach(m => m.classList.remove('active', 'blink'));
-      const marker = document.getElementById(`unit${id}`);
-      if (marker) {
-        marker.classList.add('active', 'blink');
-        setTimeout(() => {
-          marker.classList.remove('blink');
-        }, 5000);
-      }
-    }
-
-    // MQTT 연결 및 데이터 처리
-    client.on("connect", () => {
-      console.log("✅ MQTT 연결됨");
-      for (let i = 1; i <= unitCount; i++) {
-        client.subscribe(`ac/temperature/evap-${i}`);
-        client.subscribe(`ac/temperature/supply-${i}`);
-      }
-    });
-
+    // 색상 로직
     function getColor(role, temp) {
+      temp = parseFloat(temp);
+      if (isNaN(temp)) return "black";
       if (role === "evap") {
         if (temp < 32) return "blue";
         else if (temp <= 65) return "black";
@@ -220,6 +221,30 @@
       }
     }
 
+    // 표 생성
+    const tableBody = document.getElementById("unit-table");
+    for (let i = 1; i <= unitCount; i++) {
+      const tr = document.createElement("tr");
+      tr.id = `row-unit${i}`;
+      tr.innerHTML = `
+        <td><button class="select-btn" onclick="showPopup(${i}, document.getElementById('unit${i}'))">선택</button></td>
+        <td>Unit ${i}</td>
+        <td><span id="evap-${i}" class="black">--</span></td>
+        <td><span id="supply-${i}" class="black">--</span></td>
+      `;
+      tableBody.appendChild(tr);
+    }
+
+    // MQTT 연결
+    client.on("connect", () => {
+      console.log("✅ MQTT 연결됨");
+      for (let i = 1; i <= unitCount; i++) {
+        client.subscribe(`ac/temperature/evap-${i}`);
+        client.subscribe(`ac/temperature/supply-${i}`);
+      }
+    });
+
+    // 데이터 수신
     client.on("message", (topic, message) => {
       try {
         const data = JSON.parse(message.toString());
@@ -227,31 +252,116 @@
         const id = topic.split("-")[1];
         const temp = data.temp_f;
 
-        const el = document.getElementById(`${role}-${id}`);
-        const status = document.getElementById(`${role}-status-${id}`);
-        el.textContent = temp.toFixed(1);
-        el.className = getColor(role, temp);
-        status.className = "status online";
+        if (!temps[id]) temps[id] = { evap: "--", supply: "--" };
+        temps[id][role] = temp.toFixed(1);
         lastUpdate[`${role}-${id}`] = Date.now();
+
+        const el = document.getElementById(`${role}-${id}`);
+        if (el) {
+          el.textContent = temp.toFixed(1);
+          el.className = getColor(role, temp);
+        }
+        if (activePopup && activePopup.dataset.unit == id) updatePopupContent(id);
       } catch (e) {
         console.error("데이터 오류:", e);
       }
     });
 
-    // 오프라인 감지
-    setInterval(() => {
-      const now = Date.now();
-      for (let i = 1; i <= unitCount; i++) {
-        ["evap", "supply"].forEach(role => {
-          const key = `${role}-${i}`;
-          if (!lastUpdate[key] || now - lastUpdate[key] > 30000) {
-            document.getElementById(`${role}-status-${i}`).className = "status offline";
-            document.getElementById(`${role}-${i}`).textContent = "--";
-            document.getElementById(`${role}-${i}`).className = "black";
-          }
-        });
+    // 팝업 업데이트
+    function updatePopupContent(id) {
+      const popup = document.querySelector(".popup");
+      if (!popup) return;
+      const e = temps[id]?.evap || "--";
+      const s = temps[id]?.supply || "--";
+      popup.querySelector(".evap").innerHTML = `증발기: <span class="${getColor('evap', e)}">${e}</span>°F`;
+      popup.querySelector(".supply").innerHTML = `공급기: <span class="${getColor('supply', s)}">${s}</span>°F`;
+    }
+
+    // 팝업 표시
+    function showPopup(id, marker) {
+      if (activePopup) activePopup.remove();
+
+      const popup = document.createElement("div");
+      popup.className = "popup";
+      popup.dataset.unit = id;
+
+      const evap = temps[id]?.evap || "--";
+      const supply = temps[id]?.supply || "--";
+
+      popup.innerHTML = `
+        <h4>
+          Unit ${id}
+          <button class="close-btn" onclick="closePopup()">✕</button>
+        </h4>
+        <div class="temp evap">증발기: <span class="${getColor('evap', evap)}">${evap}</span>°F</div>
+        <div class="temp supply">공급기: <span class="${getColor('supply', supply)}">${supply}</span>°F</div>
+      `;
+
+      const rect = marker.getBoundingClientRect();
+      const containerRect = document.getElementById("layout").getBoundingClientRect();
+      popup.style.left = `${rect.left - containerRect.left + rect.width / 2}px`;
+      popup.style.top = `${rect.top - containerRect.top + rect.height + 5}px`;
+
+      document.getElementById("layout").appendChild(popup);
+      activePopup = popup;
+
+      const row = document.getElementById(`row-unit${id}`);
+      if (row) {
+        row.classList.add("highlight");
+        setTimeout(() => row.classList.remove("highlight"), 1500);
       }
-    }, 10000);
+    }
+
+    function closePopup() {
+      if (activePopup) {
+        activePopup.remove();
+        activePopup = null;
+      }
+    }
+
+    // 마커 클릭 시 팝업 표시
+    document.querySelectorAll(".marker").forEach(marker => {
+      marker.addEventListener("click", () => {
+        const id = marker.id.replace("unit", "");
+        showPopup(id, marker);
+      });
+    });
+
+    /* ---------------- 확대/축소 & 드래그 ---------------- */
+    const layout = document.getElementById("layout");
+    const mapWrapper = document.getElementById("mapWrapper");
+    let scale = 1, posX = 0, posY = 0, startX, startY, dragging = false;
+
+    mapWrapper.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      scale = Math.min(Math.max(scale + delta, 0.5), 3);
+      layout.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+    });
+
+    mapWrapper.addEventListener("mousedown", (e) => {
+      dragging = true;
+      mapWrapper.style.cursor = "grabbing";
+      startX = e.clientX - posX;
+      startY = e.clientY - posY;
+    });
+
+    mapWrapper.addEventListener("mousemove", (e) => {
+      if (!dragging) return;
+      posX = e.clientX - startX;
+      posY = e.clientY - startY;
+      layout.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+    });
+
+    mapWrapper.addEventListener("mouseup", () => {
+      dragging = false;
+      mapWrapper.style.cursor = "grab";
+    });
+
+    mapWrapper.addEventListener("mouseleave", () => {
+      dragging = false;
+      mapWrapper.style.cursor = "grab";
+    });
   </script>
 </body>
 </html>
