@@ -301,7 +301,7 @@
         const unitName = unitData.unit;
         const displayId = unitName.replace('UNIT', '');
         
-        // 1. Map creation for message handling (FIXED)
+        // 1. Map creation for message handling
         unitIdMap[displayId] = unitName;
         
         // Create table row
@@ -315,7 +315,7 @@
         `;
         tableBody.appendChild(tr);
 
-        // 2. Subscribe to MQTT topics using the correct short ID (FIXED)
+        // 2. Subscribe to MQTT topics using the correct short ID
         client.subscribe(`ac/temperature/evap-${displayId}`); 
         client.subscribe(`ac/temperature/supply-${displayId}`);
         
@@ -340,7 +340,7 @@
       console.log("✅ MQTT 연결됨");
     });
 
-    // 데이터 수신
+    // 데이터 수신 (FIXED: Added Console Log for Debugging)
     client.on("message", (topic, message) => {
       try {
         const data = JSON.parse(message.toString());
@@ -349,9 +349,16 @@
         // Topic ID: '1', '11A' 등 짧은 ID 추출
         const topicId = topic.split("-").pop(); 
         
-        // full unitName: 'UNIT1', 'UNIT11A'로 변환 (FIXED)
+        // full unitName: 'UNIT1', 'UNIT11A'로 변환
         const unitName = unitIdMap[topicId]; 
-        if (!unitName) return; // 유효하지 않은 토픽이면 무시
+        
+        if (!unitName) {
+            console.error(`🔴 Unrecognized Topic ID: ${topicId}. Topic: ${topic}`);
+            return; // 유효하지 않은 토픽이면 무시
+        }
+        
+        // 🟢 DEBUG LOG: 메시지 수신 성공 확인
+        console.log(`🟢 Data received for Unit: ${unitName} (${role}). Temp: ${data.temp_f.toFixed(1)}`);
         
         const temp = data.temp_f;
 
