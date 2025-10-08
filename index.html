@@ -235,15 +235,15 @@
       {"unit": "UNIT11B", "x1": 3014, "y1": 333, "x2": 3181, "y2": 405}
     ];
 
-    // These represent the maximum X and Y coordinates found in the JSON data,
-    // used to calculate the correct percentage ratio.
-    const mapWidth = 8192; 
-    const mapHeight = 5586; 
+    // 지도 원본 크기 설정 (JSON 좌표의 최대값에 근거하여 정확한 비율 계산)
+    const mapWidth = 6500; 
+    const mapHeight = 2560; 
 
     // ---------------- GLOBAL STATE ----------------
     const lastUpdate = {};
     const temps = {};
     let activePopup = null;
+    const unitIdMap = {}; // short ID ('1', '11A') -> full unitName ('UNIT1', 'UNIT11A')
 
     // ---------------- HELPER FUNCTIONS ----------------
     // 색상 로직
@@ -267,7 +267,7 @@
     // 맵 마커 생성 및 위치 설정 (Dynamic creation based on JSON)
     function createMarkers() {
       unitMarkersData.forEach(unitData => {
-        // Calculate the center coordinates (midpoint of x1/x2 and y1/y2)
+        // Calculate the center coordinates
         const centerX = (unitData.x1 + unitData.x2) / 2;
         const centerY = (unitData.y1 + unitData.y2) / 2;
 
@@ -301,6 +301,9 @@
         const unitName = unitData.unit;
         const displayId = unitName.replace('UNIT', '');
         
+        // 1. Map creation for message handling (FIXED)
+        unitIdMap[displayId] = unitName;
+        
         // Create table row
         const tr = document.createElement("tr");
         tr.id = `row-${unitName}`;
@@ -312,9 +315,9 @@
         `;
         tableBody.appendChild(tr);
 
-        // Subscribe to MQTT topics
-        client.subscribe(`ac/temperature/evap-${unitName}`);
-        client.subscribe(`ac/temperature/supply-${unitName}`);
+        // 2. Subscribe to MQTT topics using the correct short ID (FIXED)
+        client.subscribe(`ac/temperature/evap-${displayId}`); 
+        client.subscribe(`ac/temperature/supply-${displayId}`);
         
         if (!temps[unitName]) temps[unitName] = { evap: "--", supply: "--" };
       });
@@ -342,8 +345,14 @@
       try {
         const data = JSON.parse(message.toString());
         const role = topic.includes("evap") ? "evap" : "supply";
-        // Extracts 'UNIT1', 'UNIT11A', etc. from the topic string
-        const unitName = topic.split("-").pop(); 
+        
+        // Topic ID: '1', '11A' 등 짧은 ID 추출
+        const topicId = topic.split("-").pop(); 
+        
+        // full unitName: 'UNIT1', 'UNIT11A'로 변환 (FIXED)
+        const unitName = unitIdMap[topicId]; 
+        if (!unitName) return; // 유효하지 않은 토픽이면 무시
+        
         const temp = data.temp_f;
 
         if (!temps[unitName]) temps[unitName] = { evap: "--", supply: "--" };
