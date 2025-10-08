@@ -264,7 +264,7 @@
     const tableBody = document.getElementById("unit-table");
     const layoutDiv = document.getElementById("layout");
 
-    // 맵 마커 생성 및 위치 설정 (Dynamic creation based on JSON)
+    // 맵 마커 생성 및 위치 설정
     function createMarkers() {
       unitMarkersData.forEach(unitData => {
         // Calculate the center coordinates
@@ -340,7 +340,7 @@
       console.log("✅ MQTT 연결됨");
     });
 
-    // 데이터 수신 (FIXED: Added Console Log for Debugging)
+    // 데이터 수신
     client.on("message", (topic, message) => {
       try {
         const data = JSON.parse(message.toString());
@@ -354,11 +354,8 @@
         
         if (!unitName) {
             console.error(`🔴 Unrecognized Topic ID: ${topicId}. Topic: ${topic}`);
-            return; // 유효하지 않은 토픽이면 무시
+            return; 
         }
-        
-        // 🟢 DEBUG LOG: 메시지 수신 성공 확인
-        console.log(`🟢 Data received for Unit: ${unitName} (${role}). Temp: ${data.temp_f.toFixed(1)}`);
         
         const temp = data.temp_f;
 
@@ -388,7 +385,7 @@
       popup.querySelector(".supply").innerHTML = `공급기: <span class="${getColor('supply', s)}">${s}</span>°F`;
     }
 
-    // 팝업 표시
+    // 팝업 표시 (수정 완료: 마커 아래 25px 위치 고정)
     function showPopup(unitName, marker) {
       if (activePopup) closePopup();
 
@@ -415,9 +412,11 @@
       const markerTop = parseFloat(marker.style.top);
       
       popup.style.left = `${markerLeft}%`;
-      popup.style.top = `${markerTop}%;`; 
-      // Repositioning the popup so its center aligns with the marker's center, and it hangs down a bit
-      popup.style.transform = 'translate(-50%, 10px)'; 
+      popup.style.top = `${markerTop}%`; 
+      
+      // 마커 중앙(translateY(-50%))에서 시작하여 마커 크기(28px)를 고려해 아래로 25px만큼 이동합니다.
+      // 이로써 확대/축소와 관계없이 팝업이 마커의 하단에 정확히 위치하게 됩니다.
+      popup.style.transform = 'translate(-50%, 25px)'; 
 
 
       document.getElementById("layout").appendChild(popup);
