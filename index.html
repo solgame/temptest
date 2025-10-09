@@ -210,13 +210,36 @@
           <th>유닛</th>
           <th>증발기 온도 (°F)</th>
           <th>공급기 온도 (°F)</th>
-          <th>리셋</th> </tr>
+          <th>리셋</th> 
+        </tr>
       </thead>
       <tbody id="unit-table"></tbody>
     </table>
   </div>
 
   <script>
+    // ---------------- 보안 설정: 비밀번호 인증 ----------------
+    // 🚩 여기에 원하는 비밀번호를 설정하세요!
+    const ACCESS_PASSWORD = "1234"; 
+    const AUTH_KEY = "is_authenticated";
+    
+    if (localStorage.getItem(AUTH_KEY) !== "true") {
+        let password = prompt("🚨 이 페이지에 접속하려면 비밀번호를 입력하십시오:", "");
+
+        while (password !== ACCESS_PASSWORD) {
+            if (password === null) {
+                document.body.innerHTML = "<h1 style='color: #e74c3c; margin-top: 100px;'>접근이 거부되었습니다.</h1>";
+                throw new Error("Access denied by user.");
+            }
+            password = prompt("❌ 잘못된 비밀번호입니다. 다시 입력하십시오:", "");
+        }
+
+        localStorage.setItem(AUTH_KEY, "true");
+        console.log("✅ 인증 성공: 페이지에 접속합니다.");
+    }
+    // ---------------- /보안 설정 ----------------
+
+
     // ---------------- MQTT SETUP ----------------
     const client = mqtt.connect("wss://3f34159555984b35a539f803505dc858.s1.eu.hivemq.cloud:8884/mqtt", {
       username: "Goodmansystemllc",
@@ -224,6 +247,7 @@
     });
 
     // ---------------- UNIT DATA (From image_map_markers.json) ----------------
+    // 49개의 유닛을 처리하기 위해 데이터를 넉넉하게 포함합니다.
     const unitMarkersData = [
       {"unit": "UNIT1", "x1": 402, "y1": 2431, "x2": 488, "y2": 2533},
       {"unit": "UNIT2", "x1": 546, "y1": 2424, "x2": 655, "y2": 2525},
@@ -270,10 +294,9 @@
     const lastUpdate = {};
     const temps = {};
     let activePopup = null;
-    const unitIdMap = {}; // short ID ('1', '11A') -> full unitName ('UNIT1', 'UNIT11A')
+    const unitIdMap = {};
 
     // ---------------- HELPER FUNCTIONS ----------------
-    // 색상 로직
     function getColor(role, temp) {
       temp = parseFloat(temp);
       if (isNaN(temp)) return "black";
@@ -291,19 +314,13 @@
     const tableBody = document.getElementById("unit-table");
     const layoutDiv = document.getElementById("layout");
 
-    // 맵 마커 생성 및 위치 설정
     function createMarkers() {
       unitMarkersData.forEach(unitData => {
-        // Calculate the center coordinates
         const centerX = (unitData.x1 + unitData.x2) / 2;
         const centerY = (unitData.y1 + unitData.y2) / 2;
-
-        // Calculate the percentage position
         const leftPercent = (centerX / mapWidth) * 100;
         const topPercent = (centerY / mapHeight) * 100;
-
         const unitName = unitData.unit;
-        // Display ID: e.g., "UNIT1" -> "1", "UNIT11A" -> "11A"
         const displayId = unitName.replace('UNIT', '');
         
         const marker = document.createElement("div");
@@ -313,7 +330,6 @@
         marker.style.left = `${leftPercent}%`;
         marker.style.top = `${topPercent}%`;
         
-        // Attach click listener
         marker.addEventListener("click", () => {
           showPopup(unitName, marker);
         });
@@ -328,10 +344,9 @@
         const unitName = unitData.unit;
         const displayId = unitName.replace('UNIT', '');
         
-        // 1. Map creation for message handling
         unitIdMap[displayId] = unitName;
         
-        // 0. 리셋 상태 Topic 구독 추가
+        // 0. 리셋 상태 Topic 구독 추가 (UNIT_NAME 사용)
         client.subscribe(`ac/status/${unitName}`); 
 
         // Create table row
@@ -343,10 +358,10 @@
           <td><span id="evap-${unitName}" class="black">--</span></td>
           <td><span id="supply-${unitName}" class="black">--</span></td>
           <td><button class="reset-btn" id="reset-btn-${unitName}" onclick="requestReset('${unitName}')">리셋</button></td>
-        `; // 리셋 버튼 추가
+        `; 
         tableBody.appendChild(tr);
 
-        // 2. Subscribe to MQTT topics using the correct short ID
+        // 2. MQTT Topic 구독 (ac/temperature/role-shortId 형식 사용)
         client.subscribe(`ac/temperature/evap-${displayId}`); 
         client.subscribe(`ac/temperature/supply-${displayId}`);
         
@@ -354,13 +369,11 @@
       });
     }
     
-    // Start setup when the image is loaded
     document.getElementById("layout-img").onload = () => {
       createMarkers();
       setupUnits();
     };
 
-    // Fallback if the image loads too fast or is cached
     if (document.getElementById("layout-img").complete) {
       createMarkers();
       setupUnits();
@@ -376,36 +389,34 @@
       try {
         // ---------------- 리셋 상태 처리 로직 ----------------
         if (topic.startsWith("ac/status/")) {
-            const unitNameFromStatus = topic.split('/').pop(); // 'UNIT1' 추출
-            const status = message.toString(); // 'resetting' 또는 'done'
+            const unitNameFromStatus = topic.split('/').pop(); 
+            const status = message.toString(); 
             
             if (status === 'resetting' || status === 'done') {
                 updateResetButtonState(unitNameFromStatus, status);
-                console.log(`ℹ️ [${unitNameFromStatus}] 상태: ${status}`);
-                return; // 상태 메시지는 온도 데이터가 아니므로 여기서 종료
+                return; 
             }
         }
         // ---------------- 온도 데이터 처리 로직 ----------------
 
         const data = JSON.parse(message.toString());
-        const role = topic.includes("evap") ? "evap" : "supply";
         
-        // Topic ID: '1', '11A' 등 짧은 ID 추출
-        const topicId = topic.split("-").pop(); 
+        // 토픽에서 역할(evap/supply) 추출
+        const topicParts = topic.split('/');
+        const roleAndId = topicParts.pop(); // 예: evap-1
         
-        // full unitName: 'UNIT1', 'UNIT11A'로 변환
+        // 역할과 짧은 ID 추출
+        const role = roleAndId.includes("evap") ? "evap" : "supply";
+        const topicId = roleAndId.split("-").pop(); // 예: 1
+        
         const unitName = unitIdMap[topicId]; 
         
-        if (!unitName) {
-            console.error(`🔴 Unrecognized Topic ID: ${topicId}. Topic: ${topic}`);
-            return; 
-        }
+        if (!unitName) { return; }
         
         const temp = data.temp_f;
 
         if (!temps[unitName]) temps[unitName] = { evap: "--", supply: "--" };
         temps[unitName][role] = temp.toFixed(1);
-        lastUpdate[`${role}-${unitName}`] = Date.now();
 
         const el = document.getElementById(`${role}-${unitName}`);
         if (el) {
@@ -420,10 +431,6 @@
 
     // ---------------- 리셋 버튼 로직 ----------------
 
-    /**
-     * 특정 유닛에 리셋 명령을 전송하고 버튼 상태를 업데이트합니다.
-     * @param {string} unitName - 전체 유닛 이름 (예: 'UNIT1')
-     */
     function requestReset(unitName) {
         const topic = `ac/reset/${unitName}`;
         const btn = document.getElementById(`reset-btn-${unitName}`);
@@ -435,24 +442,14 @@
 
         if (confirm(`정말로 ${unitName}을(를) 리셋하시겠습니까? (1분간 전원 차단)`)) {
             client.publish(topic, "reset", { qos: 1 });
-            console.log(`📤 [${topic}] reset 명령 전송`);
-            
-            // 리셋 요청 즉시 버튼 색상을 변경하여 사용자에게 피드백 제공
             updateResetButtonState(unitName, 'resetting');
         }
     }
 
-
-    /**
-     * 리셋 버튼의 스타일과 텍스트를 업데이트합니다.
-     * @param {string} unitName - 전체 유닛 이름
-     * @param {string} state - 'resetting', 'done', or 'ready'
-     */
     function updateResetButtonState(unitName, state) {
         const btn = document.getElementById(`reset-btn-${unitName}`);
         if (!btn) return;
         
-        // 기존 타이머 클리어
         if (btn.dataset.timerId) {
             clearInterval(parseInt(btn.dataset.timerId));
             delete btn.dataset.timerId;
@@ -467,24 +464,20 @@
             btn.disabled = true;
             btn.textContent = "리셋 중 (60s)";
             
-            // 카운트 다운 타이머 (선택 사항)
             let count = 60;
             const timer = setInterval(() => {
                 count--;
                 btn.textContent = `리셋 중 (${count}s)`;
                 if (count <= 0) {
                     clearInterval(timer);
-                    // 카운트 다운이 끝났어도, 실제 상태는 MQTT 메시지(done)를 기다림
                     btn.textContent = "완료 대기";
                 }
             }, 1000);
-            // 타이머 ID 저장
             btn.dataset.timerId = timer; 
 
         } else if (state === 'done') {
             btn.textContent = "완료 ✅";
             
-            // 잠시 후 버튼을 정상 상태로 복구
             setTimeout(() => {
                 btn.textContent = "리셋";
             }, 3000); 
@@ -492,7 +485,6 @@
     }
 
     // ---------------- POPUP LOGIC ----------------
-    // 팝업 업데이트
     function updatePopupContent(unitName) {
       const popup = document.querySelector(".popup");
       if (!popup) return;
@@ -502,7 +494,6 @@
       popup.querySelector(".supply").innerHTML = `공급기: <span class="${getColor('supply', s)}">${s}</span>°F`;
     }
 
-    // 팝업 표시 (수정 완료: 마커 아래 25px 위치 고정)
     function showPopup(unitName, marker) {
       if (activePopup) closePopup();
 
@@ -524,22 +515,17 @@
         <div class="temp supply">공급기: <span class="${getColor('supply', supply)}">${supply}</span>°F</div>
       `;
 
-      // Use the marker's percentage position
       const markerLeft = parseFloat(marker.style.left);
       const markerTop = parseFloat(marker.style.top);
       
       popup.style.left = `${markerLeft}%`;
       popup.style.top = `${markerTop}%`; 
       
-      // 마커 중앙(translateY(-50%))에서 시작하여 마커 크기(28px)를 고려해 아래로 25px만큼 이동합니다.
-      // 이로써 확대/축소와 관계없이 팝업이 마커의 하단에 정확히 위치하게 됩니다.
       popup.style.transform = 'translate(-50%, 25px)'; 
-
 
       document.getElementById("layout").appendChild(popup);
       activePopup = popup;
 
-      // Highlight the corresponding table row
       const row = document.getElementById(`row-${unitName}`);
       if (row) {
         row.classList.add("highlight");
