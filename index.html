@@ -164,6 +164,33 @@
     button.select-btn:hover {
       background: #2980b9;
     }
+
+    /* 리셋 버튼 스타일 추가 */
+    button.reset-btn {
+      padding: 4px 8px;
+      background: #e74c3c; /* 평상시: 빨간색 */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: 0.3s;
+      width: 55px; /* 버튼 크기 고정 */
+    }
+    button.reset-btn:hover {
+      background: #c0392b;
+    }
+    /* 리셋 진행 중 스타일 */
+    button.reset-btn.resetting {
+      background: #f39c12; /* 리셋 중: 주황색 */
+      cursor: not-allowed;
+      animation: pulsate 1s infinite alternate; /* 깜빡임 효과 */
+    }
+    
+    @keyframes pulsate {
+        from { opacity: 1; }
+        to { opacity: 0.7; }
+    }
   </style>
 </head>
 <body>
@@ -183,7 +210,7 @@
           <th>유닛</th>
           <th>증발기 온도 (°F)</th>
           <th>공급기 온도 (°F)</th>
-        </tr>
+          <th>리셋</th> </tr>
       </thead>
       <tbody id="unit-table"></tbody>
     </table>
@@ -304,6 +331,9 @@
         // 1. Map creation for message handling
         unitIdMap[displayId] = unitName;
         
+        // 0. 리셋 상태 Topic 구독 추가
+        client.subscribe(`ac/status/${unitName}`); 
+
         // Create table row
         const tr = document.createElement("tr");
         tr.id = `row-${unitName}`;
@@ -312,7 +342,8 @@
           <td>${displayId}</td>
           <td><span id="evap-${unitName}" class="black">--</span></td>
           <td><span id="supply-${unitName}" class="black">--</span></td>
-        `;
+          <td><button class="reset-btn" id="reset-btn-${unitName}" onclick="requestReset('${unitName}')">리셋</button></td>
+        `; // 리셋 버튼 추가
         tableBody.appendChild(tr);
 
         // 2. Subscribe to MQTT topics using the correct short ID
@@ -343,6 +374,19 @@
     // 데이터 수신
     client.on("message", (topic, message) => {
       try {
+        // ---------------- 리셋 상태 처리 로직 ----------------
+        if (topic.startsWith("ac/status/")) {
+            const unitNameFromStatus = topic.split('/').pop(); // 'UNIT1' 추출
+            const status = message.toString(); // 'resetting' 또는 'done'
+            
+            if (status === 'resetting' || status === 'done') {
+                updateResetButtonState(unitNameFromStatus, status);
+                console.log(`ℹ️ [${unitNameFromStatus}] 상태: ${status}`);
+                return; // 상태 메시지는 온도 데이터가 아니므로 여기서 종료
+            }
+        }
+        // ---------------- 온도 데이터 처리 로직 ----------------
+
         const data = JSON.parse(message.toString());
         const role = topic.includes("evap") ? "evap" : "supply";
         
@@ -373,6 +417,79 @@
         console.error("데이터 오류:", e);
       }
     });
+
+    // ---------------- 리셋 버튼 로직 ----------------
+
+    /**
+     * 특정 유닛에 리셋 명령을 전송하고 버튼 상태를 업데이트합니다.
+     * @param {string} unitName - 전체 유닛 이름 (예: 'UNIT1')
+     */
+    function requestReset(unitName) {
+        const topic = `ac/reset/${unitName}`;
+        const btn = document.getElementById(`reset-btn-${unitName}`);
+
+        if (btn && btn.classList.contains('resetting')) {
+            console.warn(`[${unitName}] 이미 리셋 중입니다.`);
+            return;
+        }
+
+        if (confirm(`정말로 ${unitName}을(를) 리셋하시겠습니까? (1분간 전원 차단)`)) {
+            client.publish(topic, "reset", { qos: 1 });
+            console.log(`📤 [${topic}] reset 명령 전송`);
+            
+            // 리셋 요청 즉시 버튼 색상을 변경하여 사용자에게 피드백 제공
+            updateResetButtonState(unitName, 'resetting');
+        }
+    }
+
+
+    /**
+     * 리셋 버튼의 스타일과 텍스트를 업데이트합니다.
+     * @param {string} unitName - 전체 유닛 이름
+     * @param {string} state - 'resetting', 'done', or 'ready'
+     */
+    function updateResetButtonState(unitName, state) {
+        const btn = document.getElementById(`reset-btn-${unitName}`);
+        if (!btn) return;
+        
+        // 기존 타이머 클리어
+        if (btn.dataset.timerId) {
+            clearInterval(parseInt(btn.dataset.timerId));
+            delete btn.dataset.timerId;
+        }
+
+        btn.classList.remove('resetting');
+        btn.disabled = false;
+        btn.textContent = "리셋";
+
+        if (state === 'resetting') {
+            btn.classList.add('resetting');
+            btn.disabled = true;
+            btn.textContent = "리셋 중 (60s)";
+            
+            // 카운트 다운 타이머 (선택 사항)
+            let count = 60;
+            const timer = setInterval(() => {
+                count--;
+                btn.textContent = `리셋 중 (${count}s)`;
+                if (count <= 0) {
+                    clearInterval(timer);
+                    // 카운트 다운이 끝났어도, 실제 상태는 MQTT 메시지(done)를 기다림
+                    btn.textContent = "완료 대기";
+                }
+            }, 1000);
+            // 타이머 ID 저장
+            btn.dataset.timerId = timer; 
+
+        } else if (state === 'done') {
+            btn.textContent = "완료 ✅";
+            
+            // 잠시 후 버튼을 정상 상태로 복구
+            setTimeout(() => {
+                btn.textContent = "리셋";
+            }, 3000); 
+        }
+    }
 
     // ---------------- POPUP LOGIC ----------------
     // 팝업 업데이트
