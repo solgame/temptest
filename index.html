@@ -12,174 +12,67 @@
       text-align: center;
       overflow-x: hidden;
     }
-    h2 {
-      margin-top: 20px;
-      color: #2c3e50;
-    }
+    h2 { margin-top: 20px; color: #2c3e50; }
 
-    /* ---------------- 지도 컨테이너 ---------------- */
     .map-wrapper {
-      width: 90%;
-      max-width: 900px;
-      margin: 20px auto;
-      border-radius: 10px;
-      box-shadow: 0 0 8px #bbb;
-      overflow: hidden;
-      position: relative;
-      background: #fff;
-      cursor: grab;
+      width: 90%; max-width: 900px; margin: 20px auto;
+      border-radius: 10px; box-shadow: 0 0 8px #bbb;
+      overflow: hidden; position: relative; background: #fff; cursor: grab;
     }
-    #layout {
-      position: relative;
-      transform-origin: center center;
-      transition: transform 0.1s ease-out;
-    }
-    #layout img {
-      width: 100%;
-      border-radius: 10px;
-      display: block;
-    }
+    #layout { position: relative; transform-origin: center center; transition: transform 0.1s ease-out; }
+    #layout img { width: 100%; border-radius: 10px; display: block; }
 
-    /* 마커 스타일 */
     .marker {
-      position: absolute;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: gray;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 12px;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      /* 마커를 중앙에 정렬하기 위해 추가 */
-      transform: translate(-50%, -50%);
+      position: absolute; width: 28px; height: 28px; border-radius: 50%;
+      background: gray; color: white; display: flex; justify-content: center;
+      align-items: center; font-size: 12px; cursor: pointer;
+      transform: translate(-50%, -50%); transition: 0.2s;
     }
     .marker:hover { transform: translate(-50%, -50%) scale(1.2); }
-    .marker.active {
-      background: #e74c3c !important;
-      box-shadow: 0 0 10px #e74c3c;
-    }
+    .marker.active { background: #e74c3c !important; box-shadow: 0 0 10px #e74c3c; }
 
-    /* 팝업 카드 */
     .popup {
-      position: absolute;
-      backdrop-filter: blur(10px);
-      background: rgba(255, 255, 255, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 12px;
-      padding: 12px 14px 10px 14px;
-      font-size: 0.9rem;
-      color: #333;
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
-      min-width: 150px;
-      z-index: 10;
-      animation: fadeIn 0.3s ease;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translate(-50%, 0); }
-      to { opacity: 1; transform: translate(-50%, 10px); }
-    }
-
-    .popup h4 {
-      margin: 0;
-      color: #2c3e50;
-      font-size: 1rem;
-      font-weight: 600;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .close-btn {
-      border: none;
-      background: none;
-      color: #555;
-      font-size: 1rem;
-      cursor: pointer;
-      padding: 0;
-      margin-left: 10px;
-      transition: 0.2s;
-    }
-    .close-btn:hover { color: #e74c3c; transform: scale(1.2); }
-
-    .popup .temp {
-      display: flex;
-      justify-content: space-between;
-      font-weight: 600;
-      margin-top: 5px;
+      position: absolute; backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.75); border-radius: 12px;
+      padding: 10px 14px; font-size: 0.9rem; color: #333;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15); z-index: 10;
     }
 
     .blue { color: #3498db; }
     .black { color: #2c3e50; }
     .red { color: #e74c3c; }
 
-    /* ---------------- 표 ---------------- */
     .table-container {
-      width: 90%;
-      max-width: 900px;
-      margin: 30px auto 60px auto;
-      max-height: 450px;
-      overflow-y: auto;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 90%; max-width: 900px; margin: 30px auto 60px auto;
+      background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #eee;
-    }
-    th {
-      background: #3498db;
-      color: white;
-      font-weight: 600;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-    td { text-align: center; }
-    tr:last-child td { border-bottom: none; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #eee; text-align: center; }
+    th { background: #3498db; color: white; position: sticky; top: 0; z-index: 2; }
 
-    .highlight {
-      background: #fff9c4;
-      transition: background 0.5s;
+    button.select-btn, button.reset-btn {
+      padding: 4px 8px; border: none; border-radius: 5px; cursor: pointer;
+      font-size: 0.8rem; color: white; transition: 0.2s;
     }
+    button.select-btn { background: #3498db; }
+    button.select-btn:hover { background: #2980b9; }
 
-    button.select-btn {
-      padding: 4px 8px;
-      background: #3498db;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: 0.2s;
-    }
-    button.select-btn:hover {
-      background: #2980b9;
-    }
+    .reset-btn { background: #3498db; margin-left: 5px; }
+    .reset-btn.active { background: #e74c3c !important; }
   </style>
 </head>
 <body>
   <h2>RTU 실시간 온도 모니터링</h2>
 
   <div class="map-wrapper" id="mapWrapper">
-    <div id="layout">
-      <img src="layout.jpg" alt="Layout" id="layout-img">
-      </div>
+    <div id="layout"><img src="layout.jpg" alt="Layout" id="layout-img"></div>
   </div>
 
   <div class="table-container">
     <table>
       <thead>
         <tr>
-          <th>선택</th>
+          <th>선택 / 리셋</th>
           <th>유닛</th>
           <th>증발기 온도 (°F)</th>
           <th>공급기 온도 (°F)</th>
@@ -190,13 +83,19 @@
   </div>
 
   <script>
-    // ---------------- MQTT SETUP ----------------
+    // MQTT 설정
     const client = mqtt.connect("wss://3f34159555984b35a539f803505dc858.s1.eu.hivemq.cloud:8884/mqtt", {
       username: "Goodmansystemllc",
       password: "Good7071**"
     });
 
-    // ---------------- UNIT DATA (From image_map_markers.json) ----------------
+    const mapWidth = 8192, mapHeight = 5586;
+    const tableBody = document.getElementById("unit-table");
+    const layoutDiv = document.getElementById("layout");
+    const temps = {}, unitIdMap = {};
+    let activePopup = null;
+
+    // 전체 UNIT 좌표 (35개)
     const unitMarkersData = [
       {"unit": "UNIT1", "x1": 402, "y1": 2431, "x2": 488, "y2": 2533},
       {"unit": "UNIT2", "x1": 546, "y1": 2424, "x2": 655, "y2": 2525},
@@ -235,243 +134,76 @@
       {"unit": "UNIT11B", "x1": 3014, "y1": 333, "x2": 3181, "y2": 405}
     ];
 
-    // 지도 원본 크기 설정 (JSON 좌표의 최대값에 근거하여 정확한 비율 계산)
-    const mapWidth = 8192; 
-    const mapHeight = 5586; 
-
-    // ---------------- GLOBAL STATE ----------------
-    const lastUpdate = {};
-    const temps = {};
-    let activePopup = null;
-    const unitIdMap = {}; // short ID ('1', '11A') -> full unitName ('UNIT1', 'UNIT11A')
-
-    // ---------------- HELPER FUNCTIONS ----------------
-    // 색상 로직
-    function getColor(role, temp) {
-      temp = parseFloat(temp);
-      if (isNaN(temp)) return "black";
-      if (role === "evap") {
-        if (temp < 32) return "blue";
-        else if (temp <= 65) return "black";
-        else return "red";
-      } else {
-        if (temp <= 76) return "blue";
-        else if (temp <= 80) return "black";
-        else return "red";
-      }
+    function getColor(role,temp){
+      temp=parseFloat(temp);
+      if(isNaN(temp))return"black";
+      if(role==="evap"){if(temp<32)return"blue";else if(temp<=65)return"black";else return"red";}
+      else{if(temp<=76)return"blue";else if(temp<=80)return"black";else return"red";}
     }
 
-    const tableBody = document.getElementById("unit-table");
-    const layoutDiv = document.getElementById("layout");
+    // 리셋 명령 발행
+    function sendReset(unitName){
+      const btn=document.getElementById(`reset-${unitName}`);
+      if(!btn)return;
+      client.publish(`ac/reset/${unitName}`,"reset");
+      btn.classList.add('active'); btn.disabled=true; btn.textContent='리셋 중...';
+      setTimeout(()=>{btn.classList.remove('active');btn.disabled=false;btn.textContent='리셋';},60000);
+    }
 
-    // 맵 마커 생성 및 위치 설정
-    function createMarkers() {
-      unitMarkersData.forEach(unitData => {
-        // Calculate the center coordinates
-        const centerX = (unitData.x1 + unitData.x2) / 2;
-        const centerY = (unitData.y1 + unitData.y2) / 2;
-
-        // Calculate the percentage position
-        const leftPercent = (centerX / mapWidth) * 100;
-        const topPercent = (centerY / mapHeight) * 100;
-
-        const unitName = unitData.unit;
-        // Display ID: e.g., "UNIT1" -> "1", "UNIT11A" -> "11A"
-        const displayId = unitName.replace('UNIT', '');
-        
-        const marker = document.createElement("div");
-        marker.className = "marker";
-        marker.id = `marker-${unitName}`;
-        marker.textContent = displayId;
-        marker.style.left = `${leftPercent}%`;
-        marker.style.top = `${topPercent}%`;
-        
-        // Attach click listener
-        marker.addEventListener("click", () => {
-          showPopup(unitName, marker);
-        });
-        
+    function createMarkers(){
+      unitMarkersData.forEach(u=>{
+        const cx=(u.x1+u.x2)/2, cy=(u.y1+u.y2)/2;
+        const left=(cx/mapWidth)*100, top=(cy/mapHeight)*100;
+        const name=u.unit, id=name.replace('UNIT','');
+        const marker=document.createElement('div');
+        marker.className='marker'; marker.id=`marker-${name}`;
+        marker.textContent=id; marker.style.left=`${left}%`; marker.style.top=`${top}%`;
+        marker.addEventListener("click",()=>showPopup(name,marker));
         layoutDiv.appendChild(marker);
       });
     }
 
-    // 표 생성 및 MQTT 구독 설정
-    function setupUnits() {
-      unitMarkersData.forEach(unitData => {
-        const unitName = unitData.unit;
-        const displayId = unitName.replace('UNIT', '');
-        
-        // 1. Map creation for message handling
-        unitIdMap[displayId] = unitName;
-        
-        // Create table row
-        const tr = document.createElement("tr");
-        tr.id = `row-${unitName}`;
-        tr.innerHTML = `
-          <td><button class="select-btn" onclick="showPopup('${unitName}', document.getElementById('marker-${unitName}'))">선택</button></td>
-          <td>${displayId}</td>
-          <td><span id="evap-${unitName}" class="black">--</span></td>
-          <td><span id="supply-${unitName}" class="black">--</span></td>
-        `;
+    function setupUnits(){
+      unitMarkersData.forEach(u=>{
+        const name=u.unit, id=name.replace('UNIT','');
+        const tr=document.createElement('tr');
+        tr.id=`row-${name}`;
+        tr.innerHTML=`
+          <td>
+            <button class="select-btn" onclick="showPopup('${name}',document.getElementById('marker-${name}'))">선택</button>
+            <button class="reset-btn" id="reset-${name}" onclick="sendReset('${name}')">리셋</button>
+          </td>
+          <td>${id}</td>
+          <td><span id="evap-${name}" class="black">--</span></td>
+          <td><span id="supply-${name}" class="black">--</span></td>`;
         tableBody.appendChild(tr);
-
-        // 2. Subscribe to MQTT topics using the correct short ID
-        client.subscribe(`ac/temperature/evap-${displayId}`); 
-        client.subscribe(`ac/temperature/supply-${displayId}`);
-        
-        if (!temps[unitName]) temps[unitName] = { evap: "--", supply: "--" };
       });
     }
-    
-    // Start setup when the image is loaded
-    document.getElementById("layout-img").onload = () => {
-      createMarkers();
-      setupUnits();
-    };
 
-    // Fallback if the image loads too fast or is cached
-    if (document.getElementById("layout-img").complete) {
-      createMarkers();
-      setupUnits();
+    document.getElementById("layout-img").onload=()=>{createMarkers();setupUnits();};
+    if(document.getElementById("layout-img").complete){createMarkers();setupUnits();}
+
+    client.on("connect",()=>console.log("✅ MQTT 연결됨"));
+    client.on("message",(topic,message)=>{
+      try{
+        const data=JSON.parse(message.toString());
+        const role=topic.includes("evap")?"evap":"supply";
+        const id=topic.split("-").pop();
+        const name=`UNIT${id}`;
+        const temp=data.temp_f;
+        const el=document.getElementById(`${role}-${name}`);
+        if(el){el.textContent=temp.toFixed(1);el.className=getColor(role,temp);}
+      }catch(e){console.error(e);}
+    });
+
+    function showPopup(unitName,marker){
+      if(activePopup)activePopup.remove();
+      const popup=document.createElement("div");
+      popup.className="popup"; popup.dataset.unit=unitName;
+      popup.innerHTML=`<h4>${unitName}<button class="close-btn" onclick="this.parentElement.parentElement.remove()">✕</button></h4>`;
+      popup.style.left=marker.style.left; popup.style.top=marker.style.top; popup.style.transform='translate(-50%,25px)';
+      layoutDiv.appendChild(popup); activePopup=popup;
     }
-
-    // ---------------- MQTT EVENT HANDLERS ----------------
-    client.on("connect", () => {
-      console.log("✅ MQTT 연결됨");
-    });
-
-    // 데이터 수신
-    client.on("message", (topic, message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        const role = topic.includes("evap") ? "evap" : "supply";
-        
-        // Topic ID: '1', '11A' 등 짧은 ID 추출
-        const topicId = topic.split("-").pop(); 
-        
-        // full unitName: 'UNIT1', 'UNIT11A'로 변환
-        const unitName = unitIdMap[topicId]; 
-        
-        if (!unitName) {
-            console.error(`🔴 Unrecognized Topic ID: ${topicId}. Topic: ${topic}`);
-            return; 
-        }
-        
-        const temp = data.temp_f;
-
-        if (!temps[unitName]) temps[unitName] = { evap: "--", supply: "--" };
-        temps[unitName][role] = temp.toFixed(1);
-        lastUpdate[`${role}-${unitName}`] = Date.now();
-
-        const el = document.getElementById(`${role}-${unitName}`);
-        if (el) {
-          el.textContent = temp.toFixed(1);
-          el.className = getColor(role, temp);
-        }
-        if (activePopup && activePopup.dataset.unit == unitName) updatePopupContent(unitName);
-      } catch (e) {
-        console.error("데이터 오류:", e);
-      }
-    });
-
-    // ---------------- POPUP LOGIC ----------------
-    // 팝업 업데이트
-    function updatePopupContent(unitName) {
-      const popup = document.querySelector(".popup");
-      if (!popup) return;
-      const e = temps[unitName]?.evap || "--";
-      const s = temps[unitName]?.supply || "--";
-      popup.querySelector(".evap").innerHTML = `증발기: <span class="${getColor('evap', e)}">${e}</span>°F`;
-      popup.querySelector(".supply").innerHTML = `공급기: <span class="${getColor('supply', s)}">${s}</span>°F`;
-    }
-
-    // 팝업 표시 (수정 완료: 마커 아래 25px 위치 고정)
-    function showPopup(unitName, marker) {
-      if (activePopup) closePopup();
-
-      const popup = document.createElement("div");
-      popup.className = "popup";
-      popup.dataset.unit = unitName;
-      
-      const displayId = unitName.replace('UNIT', '');
-
-      const evap = temps[unitName]?.evap || "--";
-      const supply = temps[unitName]?.supply || "--";
-
-      popup.innerHTML = `
-        <h4>
-          ${displayId}
-          <button class="close-btn" onclick="closePopup()">✕</button>
-        </h4>
-        <div class="temp evap">증발기: <span class="${getColor('evap', evap)}">${evap}</span>°F</div>
-        <div class="temp supply">공급기: <span class="${getColor('supply', supply)}">${supply}</span>°F</div>
-      `;
-
-      // Use the marker's percentage position
-      const markerLeft = parseFloat(marker.style.left);
-      const markerTop = parseFloat(marker.style.top);
-      
-      popup.style.left = `${markerLeft}%`;
-      popup.style.top = `${markerTop}%`; 
-      
-      // 마커 중앙(translateY(-50%))에서 시작하여 마커 크기(28px)를 고려해 아래로 25px만큼 이동합니다.
-      // 이로써 확대/축소와 관계없이 팝업이 마커의 하단에 정확히 위치하게 됩니다.
-      popup.style.transform = 'translate(-50%, 25px)'; 
-
-
-      document.getElementById("layout").appendChild(popup);
-      activePopup = popup;
-
-      // Highlight the corresponding table row
-      const row = document.getElementById(`row-${unitName}`);
-      if (row) {
-        row.classList.add("highlight");
-        setTimeout(() => row.classList.remove("highlight"), 1500);
-      }
-    }
-
-    function closePopup() {
-      if (activePopup) {
-        activePopup.remove();
-        activePopup = null;
-      }
-    }
-    
-    // ---------------- ZOOM & DRAG LOGIC ----------------
-    const layout = document.getElementById("layout");
-    const mapWrapper = document.getElementById("mapWrapper");
-    let scale = 1, posX = 0, posY = 0, startX, startY, dragging = false;
-
-    mapWrapper.addEventListener("wheel", (e) => {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      scale = Math.min(Math.max(scale + delta, 0.5), 3);
-      layout.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-    });
-
-    mapWrapper.addEventListener("mousedown", (e) => {
-      dragging = true;
-      mapWrapper.style.cursor = "grabbing";
-      startX = e.clientX - posX;
-      startY = e.clientY - posY;
-    });
-
-    mapWrapper.addEventListener("mousemove", (e) => {
-      if (!dragging) return;
-      posX = e.clientX - startX;
-      posY = e.clientY - startY;
-      layout.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-    });
-
-    mapWrapper.addEventListener("mouseup", () => {
-      dragging = false;
-      mapWrapper.style.cursor = "grab";
-    });
-
-    mapWrapper.addEventListener("mouseleave", () => {
-      dragging = false;
-      mapWrapper.style.cursor = "grab";
-    });
   </script>
 </body>
 </html>
